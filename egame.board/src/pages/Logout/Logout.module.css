@@ -1,0 +1,68 @@
+.text_container {
+  padding-bottom: 50px;
+  padding-top: 50px;
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap");
+.text {
+  font-family: "Poppins", sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 35px;
+
+  text-align: center;
+  letter-spacing: 0.03em;
+
+  color: #1395ff;
+  margin: 0;
+}
+
+.text_black {
+  font-family: "Poppins", sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 35px;
+
+  text-align: center;
+  letter-spacing: 0.03em;
+
+  color: black;
+  margin-top: 0;
+}
+
+.button_container {
+  display: flex;
+  justify-content: center;
+}
+
+.wallet_address {
+  background-color: #f2fbff;
+  border-radius: 6px;
+}
+
+.wallet_container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=PT+Sans&display=swap');
+.address {
+  padding: 10px;
+  margin: 0;
+  
+  font-family: "PT Sans", sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 16px;
+  line-height: 21px;
+  /* identical to box height */
+
+  text-align: center;
+
+  /* Black */
+
+  color: #000000;
+}

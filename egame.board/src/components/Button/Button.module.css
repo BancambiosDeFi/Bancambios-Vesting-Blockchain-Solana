@@ -1,0 +1,31 @@
+.button_container {
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 16px;
+
+  background: linear-gradient(180deg, #49adff 52.39%, #1395ff 52.4%);
+  border-radius: 4px;
+  height: 56px;
+}
+
+.button_text {
+  font-family: PT Sans;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 21px;
+
+  text-align: center;
+  text-transform: uppercase;
+
+  color: #ffffff;
+  margin: 0;
+}
+
+.icon {
+  /* padding: 12px 0 12px 16px; */
+  padding-right: 16px;
+}

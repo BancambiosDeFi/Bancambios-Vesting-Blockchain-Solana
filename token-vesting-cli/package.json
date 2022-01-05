@@ -1,0 +1,38 @@
+{
+  "dependencies": {
+    "@solana/spl-token": "^0.1.8",
+    "@solana/web3.js": "^1.31.0",
+    "@solvei/borsh": "^0.0.20",
+    "@types/bignumber.js": "^5.0.0",
+    "bignumber.js": "^9.0.2",
+    "bn.js": "^5.2.0",
+    "chalk": "^5.0.0",
+    "commander": "^8.3.0",
+    "csv-parse": "^5.0.3",
+    "dotenv": "^10.0.0",
+    "fs": "^0.0.1-security",
+    "inquirer": "^8.2.0",
+    "mz": "^2.7.0",
+    "reflect-metadata": "^0.1.13",
+    "shelljs": "^0.8.4",
+    "yup": "^0.32.11"
+  },
+  "name": "tv",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "version": "1.0.0",
+  "bin": "./dist/terminal.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prebuild": "cd ../token-vesting-api && yarn install",
+    "postbuild": "npm link ../token-vesting-api",
+    "build": "tsc -w",
+    "start": "npm link && clear && tv help"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/mz": "^2.7.4"
+  }
+}
