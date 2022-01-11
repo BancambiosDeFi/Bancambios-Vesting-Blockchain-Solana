@@ -81,11 +81,6 @@ then
     echo "Mint disabling complete!"
 fi
 
-if $new_keypair
-then
-    solana config set --keypair $initial_keypair > /dev/null 2>&1
-fi
-
 echo "Creating file environment..."
 cd ..
 exec 6>&1
@@ -117,4 +112,7 @@ cd token-vesting
 echo "Information about token:"
 spl-token account-info $token
 
-tv --help
+if $new_keypair
+then
+    solana config set --keypair $initial_keypair > /dev/null 2>&1
+fi
