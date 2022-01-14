@@ -14,7 +14,7 @@ use std::convert::TryFrom;
 use super::Processor;
 use crate::{
     error::VestingError,
-    state::{VestingSchedule, VestingTypeAccount},
+    state::{LinearVesting, VestingSchedule, VestingTypeAccount},
     utils::write_to_storage,
 };
 
@@ -54,21 +54,12 @@ impl Processor {
     pub fn create_vesting_type(
         program_id: &Pubkey,
         accounts: &[AccountInfo],
-        initial_unlock: u64,
-        start_time: u64,
-        end_time: u64,
-        unlock_period: u64,
-        cliff: u64,
+        token_count: u64,
+        vestings: &[(u64, LinearVesting)],
     ) -> ProgramResult {
         let accounts = Accounts::try_from(accounts)?;
 
-        let vesting_schedule = VestingSchedule {
-            start_time,
-            end_time,
-            initial_unlock,
-            unlock_period,
-            cliff,
-        };
+        let vesting_schedule = VestingSchedule::new(token_count, &vestings);
         check_and_initialize_vesting_type(accounts, vesting_schedule)?;
         check_and_transfer_token_pool(program_id, accounts)
     }

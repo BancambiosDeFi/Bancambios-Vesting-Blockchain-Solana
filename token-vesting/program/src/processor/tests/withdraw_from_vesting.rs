@@ -16,7 +16,7 @@ use spl_token::{
     instruction::{initialize_account, initialize_mint, mint_to},
 };
 
-use crate::state::{VestingAccount, VestingTypeAccount};
+use crate::state::{LinearVesting, VestingAccount, VestingTypeAccount, MAX_VESTINGS};
 use crate::{instruction::VestingInstruction, state::VestingSchedule};
 
 use super::common::{
@@ -186,16 +186,21 @@ async fn init_token_accounts(test_context: &mut TestContext, tokens_in_pool: u64
         .unwrap();
 }
 
-fn construct_default_vesting_schedule() -> VestingSchedule {
+fn construct_default_vesting_schedule(tokens: u64) -> VestingSchedule {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule {
-        start_time: timestamp - 200,
-        end_time: timestamp + 10,
-        unlock_period: 100,
-        cliff: timestamp - 110,
-        initial_unlock: 0,
-    }
+    VestingSchedule::with_tokens(tokens)
+        .legacy(
+            timestamp - 200,
+            timestamp + 10,
+            100,
+            timestamp - 110,
+            0,
+            None,
+        )
+        .unwrap()
+        .build()
+        .unwrap()
 }
 
 async fn call_create_vesting_type(
@@ -216,12 +221,13 @@ async fn call_create_vesting_type(
             },
     } = test_context;
 
+    let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+    vestings[..vesting_schedule.vestings().len()].copy_from_slice(vesting_schedule.vestings());
+
     let data = VestingInstruction::CreateVestingType {
-        start_time: vesting_schedule.start_time,
-        end_time: vesting_schedule.end_time,
-        unlock_period: vesting_schedule.unlock_period,
-        cliff: vesting_schedule.cliff,
-        initial_unlock: vesting_schedule.initial_unlock,
+        token_count: vesting_schedule.token_count(),
+        vesting_count: vesting_schedule.vestings().len() as u8,
+        vestings,
     }
     .pack();
     let mut accounts = vec![
@@ -337,14 +343,16 @@ async fn test_successful_withdraw_from_vesting() {
     let mut test_context = TestContext::new(default_add_accounts).await;
     init_token_accounts(&mut test_context, 500).await;
 
+    let tokens = 100;
+
     call_create_vesting_type(
         &mut test_context,
-        &construct_default_vesting_schedule(),
+        &construct_default_vesting_schedule(tokens),
         vec![],
     )
     .await
     .unwrap();
-    call_create_vesting(&mut test_context, 100, vec![])
+    call_create_vesting(&mut test_context, tokens, vec![])
         .await
         .unwrap();
 

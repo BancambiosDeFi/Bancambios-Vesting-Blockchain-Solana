@@ -49,7 +49,7 @@ impl Processor {
         );
 
         signers_data.current_signers[index] = true;
-        
+
         if closing_vesting {
             Processor::close_vesting_account((vesting_type, deleted_vesting))?;
             let vesting_type_starting_lamports = vesting_type.lamports();

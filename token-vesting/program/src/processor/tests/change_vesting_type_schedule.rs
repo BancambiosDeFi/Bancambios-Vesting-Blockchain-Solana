@@ -4,7 +4,6 @@ use chrono::Utc;
 use solana_program::{
     hash::Hash,
     instruction::{AccountMeta, Instruction, InstructionError},
-    native_token::sol_to_lamports,
     pubkey::Pubkey,
     rent::Rent,
 };
@@ -18,7 +17,7 @@ use spl_token::{
     instruction::{initialize_account, initialize_mint},
 };
 
-use crate::state::VestingTypeAccount;
+use crate::state::{LinearVesting, ScheduleBuilderError, VestingTypeAccount, MAX_VESTINGS};
 use crate::{instruction::VestingInstruction, state::VestingSchedule};
 
 use super::common::{add_account, deserialize_account, AbstractTestContext, ErrorChecker};
@@ -137,13 +136,15 @@ async fn init_token_accounts(test_context: &mut TestContext) {
 fn construct_default_vesting_schedule() -> VestingSchedule {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule {
-        start_time: timestamp + 100,
-        end_time: timestamp + 200,
-        unlock_period: 10,
-        cliff: timestamp + 120,
-        initial_unlock: 0,
-    }
+    VestingSchedule::with_tokens(1000)
+        .cliffed(
+            timestamp + 120,
+            LinearVesting::new(timestamp + 100, 10, 10),
+            None,
+        )
+        .unwrap()
+        .build()
+        .unwrap()
 }
 
 fn construct_new_vesting_schedule(
@@ -152,16 +153,20 @@ fn construct_new_vesting_schedule(
     unlock_period: u64,
     cliff: u64,
     initial_unlock: u64,
-) -> VestingSchedule {
+    tokens: u64,
+) -> Result<VestingSchedule, ScheduleBuilderError> {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule {
-        start_time: timestamp + start_time,
-        end_time: timestamp + end_time,
-        unlock_period: unlock_period,
-        cliff: timestamp + cliff,
-        initial_unlock: initial_unlock,
-    }
+    VestingSchedule::with_tokens(tokens)
+        .legacy(
+            timestamp + start_time,
+            timestamp + end_time,
+            unlock_period,
+            timestamp + cliff,
+            initial_unlock,
+            None,
+        )
+        .and_then(|x| x.build())
 }
 
 async fn call_create_vesting_type(
@@ -182,12 +187,13 @@ async fn call_create_vesting_type(
             },
     } = test_context;
 
+    let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+    vestings[..vesting_schedule.vestings().len()].copy_from_slice(vesting_schedule.vestings());
+
     let data = VestingInstruction::CreateVestingType {
-        start_time: vesting_schedule.start_time,
-        end_time: vesting_schedule.end_time,
-        unlock_period: vesting_schedule.unlock_period,
-        cliff: vesting_schedule.cliff,
-        initial_unlock: vesting_schedule.initial_unlock,
+        token_count: vesting_schedule.token_count(),
+        vesting_count: vesting_schedule.vestings().len() as u8,
+        vestings,
     }
     .pack();
     let mut accounts = vec![
@@ -223,12 +229,14 @@ async fn call_change_vesting_type_schedule(
         keypairs: KeyPairs { vesting_type, .. },
     } = test_context;
 
+    let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+    vestings[..new_vesting_schedule.vestings().len()]
+        .copy_from_slice(new_vesting_schedule.vestings());
+
     let data = VestingInstruction::ChangeVestingTypeSchedule {
-        start_time: new_vesting_schedule.start_time,
-        end_time: new_vesting_schedule.end_time,
-        unlock_period: new_vesting_schedule.unlock_period,
-        cliff: new_vesting_schedule.cliff,
-        initial_unlock: new_vesting_schedule.initial_unlock,
+        token_count: new_vesting_schedule.token_count(),
+        vesting_count: new_vesting_schedule.vestings().len() as u8,
+        vestings,
     }
     .pack();
     let mut accounts = vec![
@@ -261,7 +269,7 @@ async fn test_successful_change_vesting_type_schedule() {
         .unwrap();
 
     let new_vesting_schedule =
-        construct_new_vesting_schedule(200, 400, 20, 240, sol_to_lamports(0.1));
+        construct_new_vesting_schedule(200, 400, 20, 240, 200, 1000).unwrap();
     call_change_vesting_type_schedule(&mut test_context, &new_vesting_schedule, vec![])
         .await
         .unwrap();
@@ -287,13 +295,11 @@ async fn test_change_vesting_type_schedule_with_invalid_schedule() {
         .await
         .unwrap();
 
-    let new_vesting_schedule =
-        construct_new_vesting_schedule(200, 199, 20, 240, sol_to_lamports(0.1));
-    // new_vesting_schedule.end_time = new_vesting_schedule.start_time - 1;
-    let result =
-        call_change_vesting_type_schedule(&mut test_context, &new_vesting_schedule, vec![]).await;
-
-    ErrorChecker::from(result).check(InstructionError::Custom(2));
+    let new_vesting_schedule = construct_new_vesting_schedule(200, 199, 20, 240, 200, 1000);
+    assert_eq!(
+        new_vesting_schedule,
+        Err(ScheduleBuilderError::InvalidTimeInterval)
+    );
 }
 
 #[tokio::test]
@@ -302,7 +308,7 @@ async fn test_change_vesting_type_schedule_with_uninitialized_account() {
     init_token_accounts(&mut test_context).await;
 
     let new_vesting_schedule =
-        construct_new_vesting_schedule(200, 400, 20, 240, sol_to_lamports(0.1));
+        construct_new_vesting_schedule(200, 400, 20, 240, 200, 1000).unwrap();
     let result =
         call_change_vesting_type_schedule(&mut test_context, &new_vesting_schedule, vec![]).await;
 

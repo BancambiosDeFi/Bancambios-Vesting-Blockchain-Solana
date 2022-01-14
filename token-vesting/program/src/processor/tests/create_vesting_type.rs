@@ -19,8 +19,11 @@ use spl_token::{
     state::Account as TokenAccount,
 };
 
-use crate::state::VestingTypeAccount;
-use crate::{instruction::VestingInstruction, state::VestingSchedule};
+use crate::{
+    instruction::VestingInstruction,
+    state::VestingSchedule,
+    state::{LinearVesting, VestingTypeAccount, MAX_VESTINGS},
+};
 
 use super::common::{
     add_account, deserialize_account, deserialize_token_account, AbstractTestContext, ErrorChecker,
@@ -140,13 +143,15 @@ async fn init_token_accounts(test_context: &mut TestContext) {
 fn construct_default_vesting_schedule() -> VestingSchedule {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule {
-        start_time: timestamp + 100,
-        end_time: timestamp + 200,
-        unlock_period: 10,
-        cliff: timestamp + 120,
-        initial_unlock: 0,
-    }
+    VestingSchedule::with_tokens(1000)
+        .cliffed(
+            timestamp + 120,
+            LinearVesting::new(timestamp + 100, 10, 10),
+            None,
+        )
+        .unwrap()
+        .build()
+        .unwrap()
 }
 
 async fn call_create_vesting_type(
@@ -167,12 +172,13 @@ async fn call_create_vesting_type(
             },
     } = test_context;
 
+    let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+    vestings[..vesting_schedule.vestings().len()].copy_from_slice(vesting_schedule.vestings());
+
     let data = VestingInstruction::CreateVestingType {
-        start_time: vesting_schedule.start_time,
-        end_time: vesting_schedule.end_time,
-        unlock_period: vesting_schedule.unlock_period,
-        cliff: vesting_schedule.cliff,
-        initial_unlock: vesting_schedule.initial_unlock,
+        token_count: vesting_schedule.token_count(),
+        vesting_count: vesting_schedule.vestings().len() as u8,
+        vestings,
     }
     .pack();
     let mut accounts = vec![
@@ -299,18 +305,6 @@ async fn test_create_vesting_type_without_rent_exempt() {
     let result = call_create_vesting_type(&mut test_context, &vesting_schedule, vec![]).await;
 
     ErrorChecker::from(result).check(InstructionError::Custom(1));
-}
-
-#[tokio::test]
-async fn test_create_vesting_type_with_invalid_schedule() {
-    let mut test_context = TestContext::new(default_add_accounts).await;
-    init_token_accounts(&mut test_context).await;
-
-    let mut vesting_schedule = construct_default_vesting_schedule();
-    vesting_schedule.end_time = vesting_schedule.start_time - 1;
-    let result = call_create_vesting_type(&mut test_context, &vesting_schedule, vec![]).await;
-
-    ErrorChecker::from(result).check(InstructionError::Custom(2));
 }
 
 #[tokio::test]

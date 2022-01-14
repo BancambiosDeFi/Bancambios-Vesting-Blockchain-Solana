@@ -1,6 +1,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::program_error::ProgramError::{self, InvalidInstructionData};
 
+use crate::state::{LinearVesting, MAX_VESTINGS};
+
 #[derive(Clone, Debug, PartialEq, BorshDeserialize, BorshSerialize)]
 pub enum VestingInstruction {
     /// Initializes Vesting Type Account and sets up signer as administrator
@@ -12,11 +14,9 @@ pub enum VestingInstruction {
     ///   2. `[writable]` Token Account to be transferred as Pool Token Account
     ///   3. `[]` Token program account
     CreateVestingType {
-        initial_unlock: u64,
-        start_time: u64,
-        end_time: u64,
-        unlock_period: u64,
-        cliff: u64,
+        token_count: u64,
+        vesting_count: u8,
+        vestings: [(u64, LinearVesting); MAX_VESTINGS],
     },
 
     /// Creates Vesting Account for specific Vesting Type Account
@@ -61,11 +61,9 @@ pub enum VestingInstruction {
     ///   0. `[signer]` The fee payer account (administrator)
     ///   1. `[writable]` Vesting Type Account
     ChangeVestingTypeSchedule {
-        initial_unlock: u64,
-        start_time: u64,
-        end_time: u64,
-        unlock_period: u64,
-        cliff: u64,
+        token_count: u64,
+        vesting_count: u8,
+        vestings: [(u64, LinearVesting); MAX_VESTINGS],
     },
 
     /// Create multisig
@@ -102,18 +100,17 @@ impl VestingInstruction {
 
 #[cfg(test)]
 mod test {
-    use solana_program::native_token::sol_to_lamports;
-
     use super::*;
 
     #[test]
     fn test_instruction_packing() {
+        let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+        vestings[0] = (400_000, LinearVesting::cliff(20));
+        vestings[1] = (600_000, LinearVesting::new(50, 50, 3));
         let original_create = VestingInstruction::CreateVestingType {
-            initial_unlock: sol_to_lamports(2.5),
-            start_time: 10,
-            end_time: 200,
-            unlock_period: 50,
-            cliff: 20,
+            token_count: 1_000_000,
+            vesting_count: 2,
+            vestings,
         };
         let packed_create = original_create.pack();
         let unpacked_create = VestingInstruction::unpack(&packed_create).unwrap();
@@ -137,11 +134,9 @@ mod test {
             VestingInstruction::unpack(&original_change.pack()).unwrap()
         );
         let original_change = VestingInstruction::ChangeVestingTypeSchedule {
-            start_time: 10080,
-            end_time: 100600,
-            unlock_period: 20,
-            cliff: 56,
-            initial_unlock: sol_to_lamports(20.0),
+            token_count: 1_000_000,
+            vesting_count: 2,
+            vestings,
         };
         assert_eq!(
             original_change,

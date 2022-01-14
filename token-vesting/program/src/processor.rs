@@ -23,21 +23,16 @@ impl Processor {
         msg!("Instruction unpacked");
         match instruction {
             VestingInstruction::CreateVestingType {
-                initial_unlock,
-                start_time,
-                end_time,
-                unlock_period,
-                cliff,
+                token_count,
+                vesting_count,
+                vestings,
             } => {
                 msg!("Instruction: Create Vesting Type");
                 Self::create_vesting_type(
                     program_id,
                     accounts,
-                    initial_unlock,
-                    start_time,
-                    end_time,
-                    unlock_period,
-                    cliff,
+                    token_count,
+                    &vestings[..vesting_count as usize],
                 )
             }
             VestingInstruction::CreateVestingAccount { total_tokens } => {
@@ -53,21 +48,16 @@ impl Processor {
                 Self::withdraw_excessive_from_pool(program_id, accounts, amount)
             }
             VestingInstruction::ChangeVestingTypeSchedule {
-                initial_unlock,
-                start_time,
-                end_time,
-                unlock_period,
-                cliff,
+                token_count,
+                vesting_count,
+                vestings,
             } => {
                 msg!("Instruction: Change Vesting Type Schedule");
                 Self::change_vesting_type_schedule(
                     program_id,
                     accounts,
-                    initial_unlock,
-                    start_time,
-                    end_time,
-                    unlock_period,
-                    cliff,
+                    token_count,
+                    &vestings[..vesting_count as usize],
                 )
             }
             VestingInstruction::CreateMultisig => {

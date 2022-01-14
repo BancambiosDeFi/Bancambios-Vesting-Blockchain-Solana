@@ -18,7 +18,7 @@ use spl_token::{
     state::{Account as TokenAccount, AccountState},
 };
 
-use crate::state::{VestingAccount, VestingTypeAccount};
+use crate::state::{LinearVesting, VestingAccount, VestingTypeAccount, MAX_VESTINGS};
 use crate::{instruction::VestingInstruction, state::VestingSchedule};
 
 use super::common::{add_account, deserialize_account, AbstractTestContext, ErrorChecker};
@@ -189,13 +189,15 @@ async fn init_token_accounts(test_context: &mut TestContext, tokens_in_pool: u64
 fn construct_default_vesting_schedule() -> VestingSchedule {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule {
-        start_time: timestamp + 100,
-        end_time: timestamp + 200,
-        unlock_period: 10,
-        cliff: timestamp + 120,
-        initial_unlock: 0,
-    }
+    VestingSchedule::with_tokens(1000)
+        .cliffed(
+            timestamp + 120,
+            LinearVesting::new(timestamp + 100, 10, 10),
+            None,
+        )
+        .unwrap()
+        .build()
+        .unwrap()
 }
 
 async fn call_create_vesting_type(
@@ -216,12 +218,13 @@ async fn call_create_vesting_type(
             },
     } = test_context;
 
+    let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+    vestings[..vesting_schedule.vestings().len()].copy_from_slice(vesting_schedule.vestings());
+
     let data = VestingInstruction::CreateVestingType {
-        start_time: vesting_schedule.start_time,
-        end_time: vesting_schedule.end_time,
-        unlock_period: vesting_schedule.unlock_period,
-        cliff: vesting_schedule.cliff,
-        initial_unlock: vesting_schedule.initial_unlock,
+        token_count: vesting_schedule.token_count(),
+        vesting_count: vesting_schedule.vestings().len() as u8,
+        vestings,
     }
     .pack();
     let mut accounts = vec![

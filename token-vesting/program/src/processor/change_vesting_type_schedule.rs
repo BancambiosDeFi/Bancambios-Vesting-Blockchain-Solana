@@ -11,7 +11,7 @@ use std::convert::TryFrom;
 use super::Processor;
 use crate::{
     error::VestingError,
-    state::{VestingSchedule, VestingTypeAccount},
+    state::{LinearVesting, VestingSchedule, VestingTypeAccount},
     utils::write_to_storage,
 };
 
@@ -45,24 +45,15 @@ impl Processor {
     pub fn change_vesting_type_schedule(
         _program_id: &Pubkey,
         accounts: &[AccountInfo],
-        initial_unlock: u64,
-        start_time: u64,
-        end_time: u64,
-        unlock_period: u64,
-        cliff: u64,
+        token_count: u64,
+        vestings: &[(u64, LinearVesting)],
     ) -> ProgramResult {
         let Accounts {
             signer,
             vesting_type,
         } = Accounts::try_from(accounts)?;
 
-        let new_vesting_schedule = VestingSchedule {
-            initial_unlock,
-            start_time,
-            end_time,
-            unlock_period,
-            cliff,
-        };
+        let new_vesting_schedule = VestingSchedule::new(token_count, &vestings);
 
         // check if the old schedule exists
         let mut vesting_type_data =
