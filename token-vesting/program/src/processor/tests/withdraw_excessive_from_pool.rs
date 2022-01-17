@@ -413,10 +413,13 @@ fn construct_default_vesting_schedule() -> VestingSchedule {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
     VestingSchedule::with_tokens(1000)
-        .cliffed(
+        .legacy(
+            timestamp + 100,
+            timestamp + 200,
+            10,
             timestamp + 120,
-            LinearVesting::new(timestamp + 100, 10, 10),
-            None,
+            0,
+            None
         )
         .unwrap()
         .build()

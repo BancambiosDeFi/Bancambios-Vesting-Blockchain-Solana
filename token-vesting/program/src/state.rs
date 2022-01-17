@@ -117,9 +117,6 @@ pub enum ScheduleBuilderError {
     /// Maximum of `MAX_VESTINGS` is allowed
     TooManyVestings,
 
-    /// Cliff time probvided to ScheduleBuilder::cliffed exceeds last trigger of vesting schedule
-    InvalidCliffTime,
-
     /// Initial unlock value is bigger than provided tokens
     InitialUnlockTooBig,
 
@@ -238,35 +235,6 @@ impl ScheduleBuilder {
 
     pub fn cliff(self, time: u64, tokens: Option<u64>) -> ScheduleBuilder {
         self.add(LinearVesting::cliff(time), tokens)
-    }
-
-    // TODO: add tests
-    pub fn cliffed(
-        self,
-        cliff_time: u64,
-        vesting: LinearVesting,
-        tokens: Option<u64>,
-    ) -> Result<ScheduleBuilder, ScheduleBuilderError> {
-        if cliff_time >= vesting.last() {
-            return Err(ScheduleBuilderError::InvalidCliffTime);
-        }
-
-        let tokens = tokens.unwrap_or(self.available_tokens());
-
-        let unlock_count = (cliff_time - vesting.start_time()) / vesting.unlock_period();
-        let time_to_next_trigger =
-            vesting.unlock_period - (cliff_time - vesting.start_time()) % vesting.unlock_period();
-
-        let cliff_tokens = (unlock_count as f64 * vesting.part() * tokens as f64) as u64;
-
-        self.cliff(cliff_time, Some(cliff_tokens)).offseted_by(
-            time_to_next_trigger,
-            LinearVesting::without_start(
-                vesting.unlock_period,
-                vesting.unlock_count - unlock_count as u8,
-            ),
-            Some(tokens - cliff_tokens),
-        )
     }
 
     pub fn offseted_by(
