@@ -342,6 +342,9 @@ impl ScheduleBuilder {
         if initial_unlock_tokens >= tokens {
             return Err(ScheduleBuilderError::InitialUnlockTooBig);
         }
+        if cliff > start_time && start_time < end_time {
+            return Err(ScheduleBuilderError::InvalidTimeInterval);
+        }
 
         let mut builder = if initial_unlock_tokens > 0 {
             self.cliff(start_time, Some(initial_unlock_tokens))
@@ -549,6 +552,27 @@ mod tests {
             .unwrap();
         let schedule = builder.build();
         assert_eq!(schedule, Err(ScheduleBuilderError::TooManyVestings))
+    }
+
+    #[test]
+    fn test_builder_failure_invalid_unlock_to_big () {
+        let schedule = VestingSchedule::with_tokens(1_000_000)
+        .legacy(10_000, 10_000 , 10_000 , 10_000 , 10_000 , Some(10_000));
+        assert_eq!(schedule, Err(ScheduleBuilderError::InitialUnlockTooBig))
+    }
+
+    #[test]
+    fn test_builder_failure_end_time_incorrect () {
+        let schedule = VestingSchedule::with_tokens(1_000_000)
+        .legacy(10_000, 1000 , 10_000 , 10_000 , 100_000 , Some(10_000));
+        assert_eq!(schedule, Err(ScheduleBuilderError::InvalidTimeInterval))
+    }
+
+    #[test]
+    fn test_builder_failure_with_cliff () {
+        let schedule = VestingSchedule::with_tokens(1_000_000)
+        .legacy(10_000, 1000 , 100_000 , 100_000 , 10_000 , Some(10_000));
+        assert_eq!(schedule, Err(ScheduleBuilderError::InvalidTimeInterval))
     }
 
     #[test]
