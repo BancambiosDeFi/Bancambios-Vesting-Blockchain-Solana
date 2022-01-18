@@ -557,21 +557,21 @@ mod tests {
     #[test]
     fn test_builder_failure_invalid_unlock_to_big () {
         let schedule = VestingSchedule::with_tokens(1_000_000)
-        .legacy(10_000, 10_000 , 10_000 , 10_000 , 10_000 , Some(10_000));
+            .legacy(10_000, 10_000, 10_000, 10_000, 10_000, Some(10_000));
         assert_eq!(schedule, Err(ScheduleBuilderError::InitialUnlockTooBig))
     }
 
     #[test]
     fn test_builder_failure_end_time_incorrect () {
         let schedule = VestingSchedule::with_tokens(1_000_000)
-        .legacy(10_000, 1000 , 10_000 , 10_000 , 100_000 , Some(10_000));
+            .legacy(10_000, 1000, 10_000, 10_000, 100_000, Some(10_000));
         assert_eq!(schedule, Err(ScheduleBuilderError::InvalidTimeInterval))
     }
 
     #[test]
     fn test_builder_failure_with_cliff () {
         let schedule = VestingSchedule::with_tokens(1_000_000)
-        .legacy(10_000, 1000 , 100_000 , 100_000 , 10_000 , Some(10_000));
+            .legacy(10_000, 1000, 100_000, 100_000, 10_000, Some(10_000));
         assert_eq!(schedule, Err(ScheduleBuilderError::InvalidTimeInterval))
     }
 
