@@ -29,7 +29,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prebuild": "npm link ../token-vesting-api",
     "build": "tsc",
-    "start": "sudo chmod u+x /usr/local/bin/tv && npm link && clear && tv help"
+    "start": "chmod u+x /usr/local/bin/tv && npm link && clear && tv help"
   },
   "author": "",
   "license": "ISC",
