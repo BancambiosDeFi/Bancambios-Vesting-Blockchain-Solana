@@ -13,8 +13,11 @@
     "fs": "^0.0.1-security",
     "inquirer": "^8.2.0",
     "mz": "^2.7.0",
+    "nodemon": "^2.0.15",
     "reflect-metadata": "^0.1.13",
     "shelljs": "^0.8.4",
+    "tsc": "^2.0.3",
+    "typescript": "^4.5.4",
     "yup": "^0.32.11"
   },
   "name": "tv",
@@ -24,10 +27,9 @@
   "bin": "./dist/terminal.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prebuild": "cd ../token-vesting-api && yarn install",
-    "postbuild": "npm link ../token-vesting-api",
-    "build": "tsc -w",
-    "start": "npm link && clear && tv help"
+    "prebuild": "npm link ../token-vesting-api",
+    "build": "tsc",
+    "start": "sudo chmod u+x /usr/local/bin/tv && npm link && clear && tv help"
   },
   "author": "",
   "license": "ISC",

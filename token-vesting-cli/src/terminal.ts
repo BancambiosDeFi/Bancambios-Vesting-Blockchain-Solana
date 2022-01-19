@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#! /usr/bin/env node
 import {} from "dotenv";
 import {
   changeVestingTypeScheduleCommand,
@@ -12,8 +12,10 @@ import {
   fillVestingTypesFromCsv,
   fillVestingsFromCsv,
 } from "./commands";
+console.log("heyhey")
 
 function main(args: string[]) {
+  console.log("heyhey")
   const config = require("dotenv").config();
   const program = require("commander");
 
