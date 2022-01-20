@@ -17,8 +17,9 @@ use spl_token::{
     instruction::{initialize_account, initialize_mint},
 };
 
+use crate::builder::{ScheduleBuilder, ScheduleBuilderError};
 use crate::instruction::VestingInstruction;
-use crate::state::{LinearVesting, ScheduleBuilderError, VestingSchedule, VestingTypeAccount};
+use crate::state::{LinearVesting, VestingSchedule, VestingTypeAccount};
 
 use super::common::{add_account, deserialize_account, AbstractTestContext, ErrorChecker};
 
@@ -136,7 +137,7 @@ async fn init_token_accounts(test_context: &mut TestContext) {
 fn construct_default_vesting_schedule() -> VestingSchedule {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule::with_tokens(1000)
+    ScheduleBuilder::with_tokens(1000)
         .legacy(
             timestamp + 100,
             timestamp + 200,
@@ -160,7 +161,7 @@ fn construct_new_vesting_schedule(
 ) -> Result<VestingSchedule, ScheduleBuilderError> {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule::with_tokens(tokens)
+    ScheduleBuilder::with_tokens(tokens)
         .legacy(
             timestamp + start_time,
             timestamp + end_time,

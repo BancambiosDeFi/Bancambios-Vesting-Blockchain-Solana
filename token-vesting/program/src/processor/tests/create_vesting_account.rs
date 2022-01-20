@@ -18,6 +18,7 @@ use spl_token::{
     state::{Account as TokenAccount, AccountState},
 };
 
+use crate::builder::ScheduleBuilder;
 use crate::instruction::VestingInstruction;
 use crate::state::{LinearVesting, VestingAccount, VestingSchedule, VestingTypeAccount};
 
@@ -189,7 +190,7 @@ async fn init_token_accounts(test_context: &mut TestContext, tokens_in_pool: u64
 fn construct_default_vesting_schedule() -> VestingSchedule {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule::with_tokens(1000)
+    ScheduleBuilder::with_tokens(1000)
         .legacy(
             timestamp + 100,
             timestamp + 200,

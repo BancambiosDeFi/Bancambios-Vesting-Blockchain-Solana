@@ -1,3 +1,4 @@
+use crate::builder::ScheduleBuilder;
 use crate::instruction::VestingInstruction;
 use crate::state::{LinearVesting, VestingAccount, VestingSchedule, VestingTypeAccount};
 
@@ -411,7 +412,7 @@ fn create_token_account_transaction(
 fn construct_default_vesting_schedule() -> VestingSchedule {
     let dt = Utc::now();
     let timestamp = dt.timestamp() as u64;
-    VestingSchedule::with_tokens(1000)
+    ScheduleBuilder::with_tokens(1000)
         .legacy(
             timestamp + 100,
             timestamp + 200,
