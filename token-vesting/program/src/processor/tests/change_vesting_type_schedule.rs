@@ -261,6 +261,7 @@ async fn call_change_vesting_type_schedule(
     banks_client.process_transaction(transaction).await
 }
 
+#[ignore = "Changing vesting type is disabled"]
 #[tokio::test]
 async fn test_successful_change_vesting_type_schedule() {
     let mut test_context = TestContext::new(default_add_accounts).await;
@@ -288,6 +289,7 @@ async fn test_successful_change_vesting_type_schedule() {
     assert_eq!(vesting_type_data.vesting_schedule, new_vesting_schedule);
 }
 
+#[ignore = "Changing vesting type is disabled"]
 #[tokio::test]
 async fn test_change_vesting_type_schedule_with_invalid_schedule() {
     let mut test_context = TestContext::new(default_add_accounts).await;
@@ -305,6 +307,7 @@ async fn test_change_vesting_type_schedule_with_invalid_schedule() {
     );
 }
 
+#[ignore = "Changing vesting type is disabled"]
 #[tokio::test]
 async fn test_change_vesting_type_schedule_with_uninitialized_account() {
     let mut test_context = TestContext::new(default_add_accounts).await;

@@ -53,12 +53,12 @@ impl Processor {
                 vestings,
             } => {
                 msg!("Instruction: Change Vesting Type Schedule");
-                Self::change_vesting_type_schedule(
-                    program_id,
-                    accounts,
-                    token_count,
-                    &vestings[..vesting_count as usize],
-                )
+                panic!("Changing vesting type is forbidden")
+                // Self::change_vesting_type_schedule(
+                //     program_id, accounts,
+                //     token_count,
+                //     &vestings[..vesting_count as usize],
+                // )
             }
             VestingInstruction::CreateMultisig => {
                 Processor::create_multisig(program_id, accounts, instruction_data)
