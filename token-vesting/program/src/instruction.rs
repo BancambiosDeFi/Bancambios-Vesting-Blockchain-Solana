@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::program_error::ProgramError::{self, InvalidInstructionData};
 
-use crate::state::{LinearVesting, MAX_VESTINGS};
+use crate::state::{LinearVesting, VestingSchedule};
 
 #[derive(Clone, Debug, PartialEq, BorshDeserialize, BorshSerialize)]
 pub enum VestingInstruction {
@@ -16,7 +16,7 @@ pub enum VestingInstruction {
     CreateVestingType {
         token_count: u64,
         vesting_count: u8,
-        vestings: [(u64, LinearVesting); MAX_VESTINGS],
+        vestings: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS],
     },
 
     /// Creates Vesting Account for specific Vesting Type Account
@@ -63,7 +63,7 @@ pub enum VestingInstruction {
     ChangeVestingTypeSchedule {
         token_count: u64,
         vesting_count: u8,
-        vestings: [(u64, LinearVesting); MAX_VESTINGS],
+        vestings: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS],
     },
 
     /// Create multisig
@@ -104,7 +104,8 @@ mod test {
 
     #[test]
     fn test_instruction_packing() {
-        let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+        let mut vestings: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS] =
+            Default::default();
         vestings[0] = (400_000, LinearVesting::cliff(20));
         vestings[1] = (600_000, LinearVesting::new(50, 50, 3));
         let original_create = VestingInstruction::CreateVestingType {

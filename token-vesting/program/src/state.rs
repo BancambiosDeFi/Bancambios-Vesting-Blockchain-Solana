@@ -83,14 +83,12 @@ impl Default for LinearVesting {
     }
 }
 
-pub const MAX_VESTINGS: usize = 16;
-
 #[derive(Debug, Clone, PartialEq, Eq, Default, BorshSerialize, BorshDeserialize)]
 pub struct VestingSchedule {
     token_count: u64,                               // 8
-    vesting_count: u8,                              // 8
-    vestings: [(u64, LinearVesting); MAX_VESTINGS], // 25 * 16 = 400
-} // 416 bvtes
+    vesting_count: u8,                              // 1
+    vestings: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS], // 25 * 16 = 400
+} // 407 bvtes
 
 #[derive(Debug, PartialEq)]
 pub struct ScheduleBuilder {
@@ -125,9 +123,11 @@ pub enum ScheduleBuilderError {
 }
 
 impl VestingSchedule {
+    pub const MAX_VESTINGS: usize = 16;
+
     pub fn new(total_tokens: u64, vestings: &[(u64, LinearVesting)]) -> VestingSchedule {
-        assert!(vestings.len() <= MAX_VESTINGS);
-        let mut vestings_: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+        assert!(vestings.len() <= VestingSchedule::MAX_VESTINGS);
+        let mut vestings_: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS] = Default::default();
         vestings_[..vestings.len()].copy_from_slice(vestings);
         VestingSchedule {
             token_count: total_tokens,
@@ -156,7 +156,7 @@ impl VestingSchedule {
     }
 
     pub fn is_valid(&self) -> bool {
-        if self.vesting_count as usize > MAX_VESTINGS {
+        if self.vesting_count as usize > VestingSchedule::MAX_VESTINGS {
             return false;
         }
 
@@ -512,7 +512,7 @@ mod tests {
     #[test]
     fn test_builder_failure_too_many_vestings() {
         let mut builder = VestingSchedule::with_tokens(1_000_000);
-        for i in 0..MAX_VESTINGS {
+        for i in 0..VestingSchedule::MAX_VESTINGS {
             builder = builder.cliff(i as u64 * 100, Some(100));
         }
         builder = builder

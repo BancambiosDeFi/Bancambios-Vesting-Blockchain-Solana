@@ -21,8 +21,7 @@ use spl_token::{
 
 use crate::{
     instruction::VestingInstruction,
-    state::VestingSchedule,
-    state::{LinearVesting, VestingTypeAccount, MAX_VESTINGS},
+    state::{LinearVesting, VestingSchedule, VestingTypeAccount},
 };
 
 use super::common::{
@@ -175,7 +174,7 @@ async fn call_create_vesting_type(
             },
     } = test_context;
 
-    let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+    let mut vestings: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS] = Default::default();
     vestings[..vesting_schedule.vestings().len()].copy_from_slice(vesting_schedule.vestings());
 
     let data = VestingInstruction::CreateVestingType {

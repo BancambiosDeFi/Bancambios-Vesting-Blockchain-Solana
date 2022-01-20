@@ -17,8 +17,8 @@ use spl_token::{
     instruction::{initialize_account, initialize_mint},
 };
 
-use crate::state::{LinearVesting, ScheduleBuilderError, VestingTypeAccount, MAX_VESTINGS};
-use crate::{instruction::VestingInstruction, state::VestingSchedule};
+use crate::instruction::VestingInstruction;
+use crate::state::{LinearVesting, ScheduleBuilderError, VestingSchedule, VestingTypeAccount};
 
 use super::common::{add_account, deserialize_account, AbstractTestContext, ErrorChecker};
 
@@ -190,7 +190,7 @@ async fn call_create_vesting_type(
             },
     } = test_context;
 
-    let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+    let mut vestings: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS] = Default::default();
     vestings[..vesting_schedule.vestings().len()].copy_from_slice(vesting_schedule.vestings());
 
     let data = VestingInstruction::CreateVestingType {
@@ -232,7 +232,7 @@ async fn call_change_vesting_type_schedule(
         keypairs: KeyPairs { vesting_type, .. },
     } = test_context;
 
-    let mut vestings: [(u64, LinearVesting); MAX_VESTINGS] = Default::default();
+    let mut vestings: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS] = Default::default();
     vestings[..new_vesting_schedule.vestings().len()]
         .copy_from_slice(new_vesting_schedule.vestings());
 
