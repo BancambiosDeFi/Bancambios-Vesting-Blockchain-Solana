@@ -92,7 +92,7 @@ pub struct VestingSchedule {
     token_count: u64,                                                // 8
     vesting_count: u8,                                               // 1
     vestings: [(u64, LinearVesting); VestingSchedule::MAX_VESTINGS], // 25 * 16 = 400
-} // 407 bvtes
+} // 409 bvtes
 
 impl VestingSchedule {
     pub const MAX_VESTINGS: usize = 16;
@@ -170,11 +170,11 @@ impl VestingSchedule {
 #[derive(Default, Debug, PartialEq, BorshSerialize, BorshDeserialize)]
 pub struct VestingTypeAccount {
     pub is_initialized: bool,              // 1
-    pub vesting_schedule: VestingSchedule, // 416
+    pub vesting_schedule: VestingSchedule, // 409
     pub locked_tokens_amount: u64,         // 8
     pub administrator: Pubkey,             // 32
     pub token_pool: Pubkey,                // 32
-} // 489 bytes
+} // 482 bytes
 
 #[derive(Default, Debug, PartialEq, BorshSerialize, BorshDeserialize)]
 pub struct RequiredSigners {
