@@ -30,7 +30,7 @@ export async function bootstrapTools(vestingName?: string | undefined) {
   const mint = new PublicKey(getEnvString("TOKEN_MINT"));
   const safeVestingName = vestingName ?? getEnvString("VESTING_NAME");
 
-  if (getEnvString("SENDER_SECRET_KEY") == "true") {
+  if (getEnvString("REQUEST_AIRDROP") == "true") {
     await requestAirdrop(connection, payer);
   }
 

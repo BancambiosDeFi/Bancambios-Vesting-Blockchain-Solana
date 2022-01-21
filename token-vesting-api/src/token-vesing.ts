@@ -40,7 +40,6 @@ import {
 
 export interface ITokenVesting {
   createVestingType(
-    amountLamports: BN,
     createVestingTypeInstruction: CreateVestingTypeInstruction
   ): Promise<Transaction>;
 
@@ -73,7 +72,6 @@ export class TokenVesting implements ITokenVesting {
   ) {}
 
   async createVestingType(
-    amountLamorts: BN,
     createVestingTypeInstruction: CreateVestingTypeInstruction
   ): Promise<Transaction> {
     const { pubkey: tokenAccountPubkey } =
@@ -115,7 +113,7 @@ export class TokenVesting implements ITokenVesting {
       tokenPoolPubkey,
       this.creator,
       [],
-      new u64(amountLamorts.toString())
+      new u64(createVestingTypeInstruction.token_count)
     );
 
     const lamportsForVestingType =

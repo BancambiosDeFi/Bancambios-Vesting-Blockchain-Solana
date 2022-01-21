@@ -1,39 +1,29 @@
 import { field, generateSchemas, variant } from "@solvei/borsh/schema";
 import BN from "bn.js";
-import { FloatAsU64Creator } from "./utils";
+import {VestingsCreator, LinearVesting} from "./models"
 
 class Super {}
 
 @variant(0)
 export class CreateVestingTypeInstruction extends Super {
-  @field(FloatAsU64Creator)
-  public initial_unlock: number;
-
   @field({ type: "u64" })
-  public start_time: number;
+  public token_count: number;
 
-  @field({ type: "u64" })
-  public end_time: number;
+  @field({ type: "u8" })
+  public vesting_count: number;
 
-  @field({ type: "u64" })
-  public unlock_period: number;
-
-  @field({ type: "u64" })
-  public cliff: number;
+  @field(VestingsCreator)
+  public vestings: Array<[BN, LinearVesting]>; // 25 * 16 = 400
 
   constructor(
-    initial_unlock: number,
-    start_time: number,
-    end_time: number,
-    unlock_period: number,
-    cliff: number
+    token_count: number,
+    vesting_count: number,
+    vestings: Array<[BN, LinearVesting]>,
   ) {
     super();
-    this.initial_unlock = initial_unlock;
-    this.start_time = start_time;
-    this.end_time = end_time;
-    this.unlock_period = unlock_period;
-    this.cliff = cliff;
+    this.token_count = token_count;
+    this.vesting_count = vesting_count;
+    this.vestings = vestings;
   }
 }
 
@@ -71,34 +61,24 @@ export class WithdrawExcessiveFromPoolInstruction extends Super {
 
 @variant(4)
 export class ChangeVestingTypeScheduleInstruction extends Super {
-  @field(FloatAsU64Creator)
-  public initial_unlock: number;
-
   @field({ type: "u64" })
-  public start_time: number;
+  public token_count: number;
 
-  @field({ type: "u64" })
-  public end_time: number;
+  @field({ type: "u8" })
+  public vesting_count: number;
 
-  @field({ type: "u64" })
-  public unlock_period: number;
-
-  @field({ type: "u64" })
-  public cliff: number;
+  @field(VestingsCreator)
+  public vestings: Array<[BN, LinearVesting]>; // 25 * 16 = 400
 
   constructor(
-    initial_unlock: number,
-    start_time: number,
-    end_time: number,
-    unlock_period: number,
-    cliff: number
+    token_count: number,
+    vesting_count: number,
+    vestings: Array<[BN, LinearVesting]>,
   ) {
     super();
-    this.initial_unlock = initial_unlock;
-    this.start_time = start_time;
-    this.end_time = end_time;
-    this.unlock_period = unlock_period;
-    this.cliff = cliff;
+    this.token_count = token_count;
+    this.vesting_count = vesting_count;
+    this.vestings = vestings;
   }
 }
 

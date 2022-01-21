@@ -1,8 +1,7 @@
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import {  PublicKey } from "@solana/web3.js";
 import { field } from "@solvei/borsh/schema";
 import BigNumber from "bignumber.js";
 import BN from "bn.js";
-import { FloatAsU64Creator } from "./utils";
 
 const PublicKeyCreator = {
   serialize: (value: PublicKey, writer: any) => {
@@ -15,69 +14,312 @@ const PublicKeyCreator = {
   },
 };
 
-export class VestingSchedule {
-  @field(FloatAsU64Creator)
-  public initial_unlock: number; //8
-  @field({ type: "u64" })
-  public start_time: BN; //8
-  @field({ type: "u64" })
-  public end_time: BN; //8
-  @field({ type: "u64" })
-  public unlock_period: BN; //8
-  @field({ type: "u64" })
-  public cliff: BN; //8
+export const VestingsCreator = { 
+  serialize: (value: Array<[BN, LinearVesting]>, writer) => {
+    if (value.length > MAX_VESTINGS) 
+        throw new Error("Too many vestings in schedule");
+    for (let i = 0; i < value.length; i+=1) {
+        writer.writeU64(value[i][0]);
+        writer.writeU64(value[i][1].start_time);
+        writer.writeU64(value[i][1].unlock_period);
+        writer.writeU8(value[i][1].unlock_count);
+    }
+    for (let i = 0; i < MAX_VESTINGS - value.length; i+=1) {
+        writer.writeU64(0);
+        writer.writeU64(0);
+        writer.writeU64(0);
+        writer.writeU8(0);
+    }
+  },
+  deserialize: (reader): Array<[BN, LinearVesting]> => {
+    let result = Array<[BN, LinearVesting]>(MAX_VESTINGS);
+    for (let i = 0; i < MAX_VESTINGS; i+=1) {
+      let tokens = reader.readU64();
+      let start_time = reader.readU64();
+      let unlock_period = reader.readU64();
+      let unlock_count = reader.readU8();
+      result[i] = [tokens, new LinearVesting(start_time, unlock_period, unlock_count)];
+    }
+    return result;
+  }
+}
 
-  static readonly space: number = 40;
+export class LinearVesting {
+  @field({ type: "u64" })
+  public start_time: BN
+  @field({ type: "u64" })
+  public unlock_period: BN
+  @field({ type: "u8" })
+  public unlock_count: number
+  static space: number = 17;
 
-  constructor(
-    initial_unlock: number,
-    start_time: BN,
-    end_time: BN,
-    unlock_period: BN,
-    cliff: BN
-  ) {
-    this.initial_unlock = initial_unlock;
-    this.start_time = start_time;
-    this.end_time = end_time;
-    this.unlock_period = unlock_period;
-    this.cliff = cliff;
+  constructor(start_time: BN, unlock_period: BN, unlock_count: number) {
+      this.start_time = start_time;
+      this.unlock_period = unlock_period;
+      this.unlock_count = unlock_count;
   }
 
-  calculateUnlockedPart(now: BN): BigNumber {
-    if (now.lt(this.start_time)) return new BigNumber(0.0);
-    if (now.lt(this.cliff)) return new BigNumber(this.initial_unlock);
-    if (now.gt(this.end_time)) return new BigNumber(1.0);
+  public static without_start(unlock_period: BN, unlock_count: number): LinearVesting {
+      return new LinearVesting(new BN(0), unlock_period, unlock_count);
+  }
 
-    let total_unlocks_count = new BigNumber(
-      this.end_time.sub(this.cliff).div(this.unlock_period).toString()
-    );
-    total_unlocks_count = total_unlocks_count.plus(1); // for unlock immideately at the end of a cliff
+  public static cliff(start_time: BN): LinearVesting {
+      return new LinearVesting(start_time, new BN(0), 1);
+  }
 
-    if (this.end_time.sub(this.cliff).mod(this.unlock_period).gtn(0)) {
-      total_unlocks_count = total_unlocks_count.plus(1); // for a last non-full period
+  public last(): BN {
+      return this.start_time.add(this.unlock_period.mul(new BN(this.unlock_count-1)));
+  }
+
+  public part(): number {
+      return 1 / this.unlock_count;
+  }
+
+  public available(time: BN): number {
+    if (time.lt(this.start_time)) {
+        return 0.0;
+    }
+    if (time.gte(this.last())) {
+        return 1.0;
+    }
+    time = time.sub(this.start_time);
+    let unlocks = time.divRound(this.unlock_period).toNumber() + 1;
+    return Math.min(1.0, this.part() * unlocks);
+  }
+} // 17
+
+export const MAX_VESTINGS = 16;
+
+export class VestingSchedule {
+  @field({ type: "u64" })
+  public token_count: BN | undefined; // 8
+  @field({ type: "u8" })
+  public vesting_count: number | undefined; // 1
+  @field(VestingsCreator)
+  public vestings: Array<[BN, LinearVesting]> | undefined; // 25 * 16 = 400
+
+  static readonly space: number = 409;
+
+  constructor(token_count: BN, vestings: Array<[BN, LinearVesting]>) {
+    this.token_count = token_count;
+    this.vesting_count = vestings === undefined ? undefined : vestings.length;
+    this.vestings = vestings;
+  }
+
+  public static with_tokens(tokens: BN): ScheduleBuilder {
+    return new ScheduleBuilder(tokens);
+  }
+
+  public calculateUnlockedPart(now: BN): BigNumber {
+    let unlocked = new BN(0);
+    for (let i = 0; i < this.vesting_count!; i+=1) {
+      if (this.vestings![i][1].start_time.gt(now)) {
+        break;
+      }
+      let unlocked_part = new BN(this.vestings![i][1].available(now));
+      unlocked = unlocked.add(unlocked_part.mul(this.vestings![i][0]));
+    }
+    return new BigNumber(unlocked.toString());
+  }
+
+  public start_time(): BN {
+    return this.vestings![0][1].start_time;
+  }
+
+  public last(): BN {
+    return this.vestings![this.vesting_count!-1][1].last();
+  }
+} // 407 bytes
+
+export class ScheduleBuilder {
+    token_count: BN;
+    used_tokens: BN;
+    vestings: Array<[BN, LinearVesting]>;
+
+    constructor(token_count: BN) {
+      this.token_count = token_count;
+      this.used_tokens = new BN(0);
+      this.vestings = new Array<[BN, LinearVesting]>();
     }
 
-    let part_per_unlock = new BigNumber(1.0 - this.initial_unlock).div(
-      total_unlocks_count
-    );
+    use_tokens(tokens: BN) {
+      this.used_tokens = this.used_tokens.add(tokens);
+    }
 
-    let elapsed_unlocks = new BigNumber(
-      now.sub(this.cliff).div(this.unlock_period).toString()
-    );
+    available_tokens(): BN {
+      if (this.used_tokens.gte(this.token_count)) {
+          return new BN(0);
+      } else {
+          return this.token_count.sub(this.used_tokens);
+      }
+    }
 
-    elapsed_unlocks = elapsed_unlocks.plus(1); // unlock immideately at the end of a cliff
+    remove_last(): [BN, LinearVesting] | undefined {
+        let last = this.vestings.pop();
+        if (last !== undefined) 
+          this.used_tokens = this.used_tokens.sub(last![0]);
+        return last;
+    }
+    public add(vesting: LinearVesting, tokens?: BN): ScheduleBuilder {
+      let tokens_: BN = tokens === undefined ? this.available_tokens() : tokens!;
+      this.use_tokens(tokens_);
 
-    return elapsed_unlocks
-      .multipliedBy(part_per_unlock)
-      .plus(this.initial_unlock);
-  }
-} //40 bytes
+      this.vestings.push([tokens_, vesting]);
+      return this;
+    }
+
+    public cliff(time: BN, tokens?: BN): ScheduleBuilder {
+      return this.add(LinearVesting.cliff(time), tokens);
+    }
+
+    public offseted_by(
+        offset: BN,
+        vesting: LinearVesting,
+        tokens?: BN
+    ): ScheduleBuilder | undefined {
+        if (this.vestings.length === 0) {
+          return undefined;
+        }
+        let last_vesting = this.vestings[this.vestings.length-1][1];
+        return this.add(
+          new LinearVesting(
+            last_vesting.last().add(offset),
+            vesting.unlock_period,
+            vesting.unlock_count),
+          tokens);
+    }
+
+    public offseted(
+        vesting: LinearVesting,
+        tokens?: BN,
+    ): ScheduleBuilder | undefined {
+        return this.offseted_by(vesting.unlock_period, vesting, tokens)
+    }
+
+    public ending_at(end_time: BN): ScheduleBuilder | undefined {
+        if (this.vestings.length == 0) {
+          return undefined;
+            // return Err(ScheduleBuilderError::EmptyBuilder);
+        }
+        let last_vesting = this.vestings[this.vestings.length - 1];
+        if (end_time >= last_vesting[1].last()) {
+          return this;
+        } else {
+            let last_vesting = this.remove_last()!;
+            let new_unlock_count = (end_time.sub(last_vesting[1].start_time))
+                                   .divRound(last_vesting[1].unlock_period)
+                                   .addn(1);
+
+            let linear_tokens = last_vesting[0].mul(new_unlock_count)
+                                               .divRound(new BN(last_vesting[1].unlock_count));
+            let cliff_tokens = last_vesting[0].sub(linear_tokens);
+
+            this.add(
+              new LinearVesting(
+                last_vesting[1].start_time,
+                last_vesting[1].unlock_period,
+                new_unlock_count.toNumber()),
+              linear_tokens)
+            .cliff(end_time, cliff_tokens)
+        }
+    }
+
+    public legacy(
+        start_time: BN,
+        end_time: BN,
+        unlock_period: BN,
+        cliff: BN,
+        initial_unlock_tokens: BN,
+        tokens?: BN,
+    ): ScheduleBuilder | undefined {
+        if (start_time >= end_time) {
+          return undefined;
+            // return Err(ScheduleBuilderError::InvalidTimeInterval);
+        }
+        let tokens_ = tokens === undefined ? this.available_tokens() : tokens!;
+        if (initial_unlock_tokens.gte( tokens_)) {
+          return undefined;
+            // return Err(ScheduleBuilderError::InitialUnlockTooBig);
+        }
+
+        let builder: ScheduleBuilder = this;
+        if (initial_unlock_tokens.gtn(0)) {
+          builder = builder.cliff(start_time, initial_unlock_tokens);
+        }
+
+
+        let remaining_tokens = tokens_.sub(initial_unlock_tokens);
+
+        let total_linear_unlocks = end_time.sub(start_time)
+                                           .divRound(unlock_period)
+                                           .addn(1);
+        if (!end_time.sub(start_time).mod(unlock_period).eqn(0) ){
+            total_linear_unlocks = total_linear_unlocks.addn(1);
+        }
+
+        let unlocks_before_cliff = cliff.sub(start_time)
+                                        .divRound(unlock_period)
+                                        .addn(1);
+        if (unlocks_before_cliff.gtn(0)) {
+            let tokens_at_cliff = remaining_tokens.mul(unlocks_before_cliff)
+                                                  .divRound(total_linear_unlocks);
+            remaining_tokens = remaining_tokens.sub(tokens_at_cliff);
+            builder = builder.cliff(cliff, tokens_at_cliff)
+        }
+
+        let first_linear_unlock = cliff.add(cliff.mod(unlock_period));
+        builder
+            .add(
+                new LinearVesting(
+                    first_linear_unlock,
+                    unlock_period,
+                    total_linear_unlocks.sub(unlocks_before_cliff).toNumber(),
+                ),
+                remaining_tokens,
+            )
+            .ending_at(end_time)
+    }
+
+    public build(): VestingSchedule | undefined {
+        if (!this.token_count.eq(this.used_tokens)) {
+          console.log(`Error: unused tokens. Total: ${this.token_count} Used: ${this.used_tokens}`)
+          return undefined;
+            // return Err(ScheduleBuilderError::InvalidTokenAmountUsed((
+            //     this.token_count,
+            //     this.used_tokens,
+            // )));
+        }
+
+        if (this.vestings.length > MAX_VESTINGS) {
+          console.log("Error: too many vestings")
+          return undefined;
+            // return Err(ScheduleBuilderError::TooManyVestings);
+        }
+
+        for(let i = 1; i < this.vestings.length; i+=1) {
+            if (this.vestings[i - 1][1].last() > this.vestings[i][1].start_time) {
+                console.log("Error: vestings are not sorted")
+                return undefined
+            }
+        }
+
+        for(let i = 0; i < this.vestings.length; i+=1) {
+            if (this.vestings[i][0].eqn(0)) {
+              console.log("Error: vesting with 0 tokens")
+              return undefined;
+                // return Err(ScheduleBuilderError::ZeroTokens);
+            }
+        }
+
+        return new VestingSchedule(this.token_count, this.vestings);
+    }
+}
 
 export class VestingTypeAccount {
   @field({ type: "u8" })
   public is_initialized: boolean | undefined; //1
   @field({ type: VestingSchedule })
-  public vesting_schedule: VestingSchedule | undefined; //40
+  public vesting_schedule: VestingSchedule | undefined; //409
   @field({ type: "u64" })
   public locked_tokens_amount: BN | undefined; //8
   @field(PublicKeyCreator)
@@ -85,7 +327,7 @@ export class VestingTypeAccount {
   @field(PublicKeyCreator)
   public token_pool: PublicKey | undefined; //32
 
-  static readonly space: number = 113;
+  static readonly space: number = 482;
 
   constructor(properties?: {
     is_initialized: boolean;

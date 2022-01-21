@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import {} from "dotenv";
+import {readFileSync} from "fs";
+
 import {
   changeVestingTypeScheduleCommand,
   withdrawExcessiveFromPoolCommand,
@@ -9,8 +11,9 @@ import {
   withdrawFromVesting,
   getVestingStatisticCommand,
   getVestingTypeStatisticCommand,
-  fillVestingTypesFromCsv,
+  fillVestingTypesFromJson,
   fillVestingsFromCsv,
+  parseVestingSchedule,
 } from "./commands";
 
 function main(args: string[]) {
@@ -22,37 +25,24 @@ function main(args: string[]) {
     .alias("c")
     .description("Create vesting type")
     .requiredOption(
-      "-a, --amountSol <number>",
-      "Amount of tokens to pass to a pool"
+      "-f, --filePath <path>",
+      "File with the description of vesting type to be created"
     )
-    .requiredOption(
-      "-i, --initialUnlock <number>",
-      "Part of tokens to unlock on start date"
-    )
-    .requiredOption("-s, --startTime <number>", "Timestamp of vesting start")
-    .requiredOption("-e, --endTime <number>", "Timestamp of vesting end")
-    .requiredOption(
-      "-u, --unlockPeriod <number>",
-      "Amount of seconds between unlocks"
-    )
-    .requiredOption("-c, --cliff <number>", "Timestamp of cliff end")
     .action(async (options: any) => {
       const {
-        amountSol,
-        initialUnlock,
-        startTime,
-        endTime,
-        unlockPeriod,
-        cliff,
+        filePath,
       } = options;
+      const content = readFileSync(filePath, "utf-8");
+      const scheduleObject = JSON.parse(content);
+      const vestingSchedule = await parseVestingSchedule(scheduleObject);
+      if (vestingSchedule === undefined) {
+        console.log("Failed to parse vesting schedule");
+        return;
+      }
+
       console.log(
         await createVestingTypeCommand(
-          amountSol,
-          initialUnlock,
-          startTime,
-          endTime,
-          unlockPeriod,
-          cliff
+          vestingSchedule!
         )
       );
     });
@@ -62,27 +52,22 @@ function main(args: string[]) {
     .alias("cs")
     .description("Change vesting type schedule")
     .requiredOption(
-      "-i, --initialUnlock <number>",
+      "-f, --filePath <path>",
       "Part of tokens to unlock on start date"
     )
-    .requiredOption("-s, --startTime <number>", "Timestamp of vesting start")
-    .requiredOption("-e, --endTime <number>", "Timestamp of vesting end")
-    .requiredOption(
-      "-u, --unlockPeriod <number>",
-      "Amount of seconds between unlocks"
-    )
-    .requiredOption("-c, --cliff <number>", "Timestamp of cliff end")
     .action(async (options: any) => {
-      const { initialUnlock, startTime, endTime, unlockPeriod, cliff } =
-        options;
+      const { filePath } = options;
+
+      const content = readFileSync(filePath, "utf-8");
+      const scheduleObject = JSON.parse(content);
+      const vestingSchedule = await parseVestingSchedule(scheduleObject);
+      if (vestingSchedule === undefined) {
+        console.log("Failed to parse vesting schedule");
+        return;
+      }
+
       console.log(
-        await changeVestingTypeScheduleCommand(
-          initialUnlock,
-          startTime,
-          endTime,
-          unlockPeriod,
-          cliff
-        )
+        await changeVestingTypeScheduleCommand(vestingSchedule)
       );
     });
 
@@ -91,12 +76,12 @@ function main(args: string[]) {
     .alias("we")
     .description("Withdraw excessive from pool")
     .requiredOption(
-      "-a, --amountSol <number>",
+      "-a, --amountTokens <number>",
       "Amount of tokens to withdraw from pool"
     )
     .action(async (options: any) => {
-      const amountSol = options.amountSol;
-      console.log(await withdrawExcessiveFromPoolCommand(amountSol));
+      const amountTokens = options.amountTokens;
+      console.log(await withdrawExcessiveFromPoolCommand(amountTokens));
     });
 
   program
@@ -107,11 +92,11 @@ function main(args: string[]) {
       "-r, --receiver <wallet>",
       "Wallet address for vesting receiver"
     )
-    .requiredOption("-a, --amountSol <number>", "Amount of tokens for vesting")
+    .requiredOption("-a, --amountTokens <number>", "Amount of tokens for vesting")
     .action(async (options: any) => {
       const receiver = options.receiver;
-      const amountSol = options.amountSol;
-      console.log(await createVestingAccountCommand(receiver, amountSol));
+      const amountTokens = options.amountTokens;
+      console.log(await createVestingAccountCommand(receiver, amountTokens));
     });
 
   program
@@ -139,7 +124,7 @@ function main(args: string[]) {
     .alias("wv")
     .description("Withdraw from vesting")
     .requiredOption(
-      "-a, --amountSol <number>",
+      "-a, --amountTokens <number>",
       "Amount of tokens to withdraw from pool"
     )
     .requiredOption(
@@ -148,7 +133,7 @@ function main(args: string[]) {
     )
     .action(async (options: any) => {
       console.log(
-        await withdrawFromVesting(options.amountSol, options.receiver)
+        await withdrawFromVesting(options.amountTokens, options.receiver)
       );
     });
 
@@ -169,7 +154,7 @@ function main(args: string[]) {
       "Path to a csv file with vesting types data"
     )
     .action(async (options: any) => {
-      await fillVestingTypesFromCsv(options.filePath);
+      await fillVestingTypesFromJson(options.filePath);
     });
 
 
@@ -185,7 +170,7 @@ function main(args: string[]) {
       await fillVestingsFromCsv(options.filePath);
     });
 
-  program.parse(process.argv);
+  program.parse(args);
 }
 
 main(process.argv);
