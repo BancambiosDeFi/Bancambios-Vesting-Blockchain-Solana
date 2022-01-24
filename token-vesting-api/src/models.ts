@@ -385,9 +385,13 @@ export class VestingAccount {
 
     let unlocked_part = schedule.calculateUnlockedPart(new BN(now));
     const totalTokens = new BigNumber(this.total_tokens.toString());
+
     let unlocked_amount = new BN(
-      totalTokens.multipliedBy(unlocked_part).dp(0, BigNumber.ROUND_FLOOR).toString()
-    );
+        unlocked_part
+          .multipliedBy(totalTokens)
+          .dividedBy(new BigNumber(schedule.token_count!.toString()))
+          .dp(0, BigNumber.ROUND_FLOOR)
+          .toString());
     unlocked_amount = BN.min(unlocked_amount, this.total_tokens); // safeguard check
     return BN.max(unlocked_amount.sub(this.withdrawn_tokens), new BN(0));
   }

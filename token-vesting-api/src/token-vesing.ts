@@ -483,7 +483,7 @@ export class TokenVesting implements ITokenVesting {
     )
       throw Error("Deserialization error");
 
-    const allTokens = vesting.total_tokens;
+    const allTokens = vesting.total_tokens!;
     const availableToWithdrawTokens =
       vesting.calculate_available_to_withdraw_amount(
         vestingType.vesting_schedule,
