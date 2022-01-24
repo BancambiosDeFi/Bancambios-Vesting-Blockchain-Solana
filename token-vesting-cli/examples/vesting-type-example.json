@@ -1,0 +1,118 @@
+[
+  {
+    "name": "strategic",
+    "amount": 106036036,
+    "schedule": [
+      {
+        "type": "onetime",
+        "part": 6362162,
+        "time": "2021-10-31T22:00:00.000Z",
+        "_commment": "time is in ISO8601 datetime format"
+      },
+      {
+        "type": "offseted",
+        "part": 9543243,
+        "offset": "P6M",
+        "count": 1,
+        "period": null,
+        "_comment": "offsets are in ISO8601 duration format",
+        "__comment": "offsets are in relation to previous array item",
+        "___comment": "offsets will be ignored if time field is present"
+      },
+      {
+        "type": "offseted",
+        "offset": "P6M",
+        "period": "P2M",
+        "_comment": "if part is null, unlock all remaining tokens",
+        "count": 6,
+        "part": null
+      }
+    ]
+  },
+  {
+    "name": "pre-sale",
+    "amount": 48198198,
+    "schedule": [
+      {
+        "type": "onetime",
+        "time": "2021-10-31T22:00:00.000Z",
+        "part": 30364864
+      },
+      {
+        "type": "offseted",
+        "part": null,
+        "offset": "P1W",
+        "period": "P1W",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "ido",
+    "amount": 28918919,
+    "schedule": [
+      {
+        "type": "onetime",
+        "time": "2021-10-31T22:00:00.000Z",
+        "part": 23424324
+      },
+      {
+        "type": "offseted",
+        "part": null,
+        "offset": "P1W",
+        "period": "P1W",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "community-dev-marketing",
+    "amount": 260270270,
+    "schedule": [
+      {
+        "type": "onetime",
+        "time": "2021-10-31T22:00:00.000Z",
+        "part": 5205405
+      },
+      {
+        "type": "offseted",
+        "part": 31232432,
+        "offset": "P1M",
+        "period": "P1M",
+        "count": 12
+      },
+      {
+        "type": "offseted",
+        "part": null,
+        "offset": "P2M",
+        "period": "P2M",
+        "count": 24
+      }
+    ]
+  },
+  {
+    "name": "liquidity-mining",
+    "amount": 260270270,
+    "schedule": [
+      {
+        "type": "onetime",
+        "time": "2021-10-31T22:00:00.000Z",
+        "part": 5205405
+      },
+      {
+        "type": "offseted",
+        "part": 31232432,
+        "offset": "P1M",
+        "period": "P1M",
+        "count": 12
+      },
+      {
+        "type": "offseted",
+        "part": null,
+        "offset": "P2M",
+        "period": "P2M",
+        "count": 24
+      }
+    ]
+  }
+]
