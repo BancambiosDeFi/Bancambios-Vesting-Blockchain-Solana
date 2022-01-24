@@ -1,4 +1,4 @@
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { VestingSchedule } from "./models";
 import BigNumber from "bignumber.js";
@@ -14,18 +14,14 @@ export class VestingStatistic {
   ) {}
 
   toString(): string {
-    const allTokens = new BigNumber(this.allTokens.toString()).div(
-      LAMPORTS_PER_SOL
-    );
-    const unlockedTokens = new BigNumber(this.unlockedTokens.toString()).div(
-      LAMPORTS_PER_SOL
-    );
+    const allTokens = new BigNumber(this.allTokens.toString());
+    const unlockedTokens = new BigNumber(this.unlockedTokens.toString());
     const availableToWithdrawTokens = new BigNumber(
       this.availableToWithdrawTokens.toString()
-    ).div(LAMPORTS_PER_SOL);
+    );
     const withdrawn_tokens = new BigNumber(
       this.withdrawn_tokens.toString()
-    ).div(LAMPORTS_PER_SOL);
+    );
 
     return (
       `All tokens: ${allTokens}\n` +

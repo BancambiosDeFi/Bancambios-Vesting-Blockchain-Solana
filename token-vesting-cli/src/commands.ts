@@ -60,7 +60,6 @@ export async function withdrawExcessiveFromPoolCommand(
       new WithdrawExcessiveFromPoolInstruction(
         new BN(
           new BigNumber(amountTokens)
-            .multipliedBy(web3.LAMPORTS_PER_SOL)
             .toString()
         )
       )
@@ -83,7 +82,7 @@ export async function createVestingAccountCommand(
     receiverPubkey,
     new CreateVestingAccountInstruction(
       new BN(
-        new BigNumber(amountTokens).multipliedBy(web3.LAMPORTS_PER_SOL).toString()
+        new BigNumber(amountTokens).toString()
       )
     )
   );
@@ -106,7 +105,7 @@ export async function withdrawFromVesting(
     receiverPubkey,
     new WithdrawFromVestingInstruction(
       new BN(
-        new BigNumber(amountTokens).multipliedBy(web3.LAMPORTS_PER_SOL).toString()
+        new BigNumber(amountTokens).toString()
       )
     )
   );
@@ -333,7 +332,7 @@ export async function fillVestingsFromCsv(fileName: PathLike) {
       receiverPubkey,
       new CreateVestingAccountInstruction(
         new BN(
-          new BigNumber(amountSol).multipliedBy(web3.LAMPORTS_PER_SOL).toString()
+          new BigNumber(amountSol).toString()
         )
       )
     );
