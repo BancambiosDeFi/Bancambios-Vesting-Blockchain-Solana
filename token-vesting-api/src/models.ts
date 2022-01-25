@@ -106,10 +106,6 @@ export class VestingSchedule {
     this.vestings = vestings;
   }
 
-  public static with_tokens(tokens: BN): ScheduleBuilder {
-    return new ScheduleBuilder(tokens);
-  }
-
   public calculateUnlockedPart(now: BN): BigNumber {
     let unlocked = new BN(0);
     for (let i = 0; i < this.vesting_count!; i+=1) {

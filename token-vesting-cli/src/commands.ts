@@ -12,7 +12,7 @@ import BigNumber from "bignumber.js";
 import { PathLike, readFileSync } from "fs";
 import { parse } from "csv-parse";
 import * as yup from "yup";
-import { LinearVesting, VestingSchedule } from "token-vesting-api/dist/models";
+import { LinearVesting, VestingSchedule, ScheduleBuilder } from "token-vesting-api/dist/models";
 
 export async function createVestingTypeCommand(
   vestingSchedule: VestingSchedule,
@@ -158,7 +158,7 @@ export async function parseVestingSchedule(schedule: object): Promise<VestingSch
   const validated_schedule = await schema.validate(schedule);
 
   let total_tokens = new BN(validated_schedule.amount);
-  let builder = VestingSchedule.with_tokens(total_tokens);
+  let builder = new ScheduleBuilder(total_tokens);
 
   const parse_duration = (duration: string): BN => {
     let result = new BN(0);
