@@ -1,2 +1,2 @@
-# srm-vesting-bc#
+# srm-vesting-bc
 
