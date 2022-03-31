@@ -112,8 +112,8 @@ export class VestingSchedule {
       if (this.vestings![i][1].start_time.gt(now)) {
         break;
       }
-      let unlocked_part = new BN(this.vestings![i][1].available(now));
-      unlocked = unlocked.add(unlocked_part.mul(this.vestings![i][0]));
+      let unlocked_part = this.vestings![i][1].available(now);
+      unlocked = unlocked.add(this.vestings![i][0].muln(unlocked_part));
     }
     return new BigNumber(unlocked.toString());
   }
