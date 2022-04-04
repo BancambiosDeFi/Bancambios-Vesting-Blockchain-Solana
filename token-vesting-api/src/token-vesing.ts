@@ -71,6 +71,56 @@ export class TokenVesting implements ITokenVesting {
     private vestingName: string
   ) {}
 
+  async createVestingTypeWithTokenAccount(
+    tokenPool: PublicKey,
+    createVestingTypeInstruction: CreateVestingTypeInstruction
+  ): Promise<Transaction> {
+    const { seed: vestingTypeSeed, pubkey: vestingTypePubkey } =
+      await this.getVestingTypeAccountContext(validateAccountDoesNotExist);
+
+    const lamportsForVestingType =
+      await this.connection.getMinimumBalanceForRentExemption(
+        VestingTypeAccount.space
+      );
+
+    const createVestingTypeAccount = SystemProgram.createAccountWithSeed({
+      fromPubkey: this.creator,
+      basePubkey: this.creator,
+      newAccountPubkey: vestingTypePubkey,
+      lamports: lamportsForVestingType,
+      space: VestingTypeAccount.space,
+      programId: this.programId,
+      seed: vestingTypeSeed,
+    });
+
+    const instance = new Instruction(createVestingTypeInstruction);
+    const instructionData = serialize(schemas, instance);
+
+    const createVestingType = new TransactionInstruction({
+      keys: [
+        { pubkey: this.creator, isSigner: true, isWritable: true },
+        { pubkey: vestingTypePubkey, isSigner: false, isWritable: true },
+        {
+          pubkey: tokenPool,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: TOKEN_PROGRAM_ID,
+          isSigner: false,
+          isWritable: false,
+        },
+      ],
+      programId: this.programId,
+      data: Buffer.from(instructionData),
+    });
+
+    const transaction = new Transaction();
+    transaction.add(createVestingTypeAccount);
+    transaction.add(createVestingType);
+    return transaction;
+  }
+
   async createVestingType(
     createVestingTypeInstruction: CreateVestingTypeInstruction
   ): Promise<Transaction> {

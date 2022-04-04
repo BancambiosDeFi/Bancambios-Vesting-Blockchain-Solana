@@ -162,7 +162,7 @@ export async function parseVestingSchedule(schedule: object): Promise<VestingSch
 
   const parse_duration = (duration: string): BN => {
     let result = new BN(0);
-    let matches = duration.match(IS08601_DURATION_REGEX); 
+    let matches = duration.match(IS08601_DURATION_REGEX);
     if (matches !== null) {
       let hadTimeSpecifier = false;
       for (const match of matches) {
@@ -252,8 +252,55 @@ export async function parseVestingSchedule(schedule: object): Promise<VestingSch
   return builder.build();
 }
 
+export async function fillVestingTypesWithWalletsFromJson(fileName: PathLike) {
+  const content = readFileSync(fileName, "utf-8");
+  const types = JSON.parse(content);
+
+  let schema = yup.array().of(
+    yup.object().required()
+    .shape({
+      name: yup.string().required(),
+      pool: yup.string().required(),
+      amount: yup.number().required().positive().integer(),
+      schedule: yup.array().min(1)
+    })
+  );
+
+  const validatedTypes = await schema.validate(types);
+
+  let vestingTypes: Array<[string, web3.PublicKey, VestingSchedule]> = new Array();
+
+  for (const vestingType of validatedTypes!) {
+    let schedule = await parseVestingSchedule(vestingType)
+    if (schedule === undefined)
+      throw Error('Failed to build schedule');
+
+    vestingTypes.push([vestingType.name, new web3.PublicKey(vestingType.pool), schedule]);
+  }
+
+  for (const [vestingName, vestingWallet, vestingType] of vestingTypes) {
+    let { tokenVesting, processTransaction } = await helpers.bootstrapTools(
+      vestingName
+    );
+    const transaction = await tokenVesting.createVestingTypeWithTokenAccount(
+      vestingWallet,
+      new CreateVestingTypeInstruction(
+        vestingType.token_count!.toNumber(),
+        vestingType.vesting_count!,
+        vestingType.vestings!,
+      )
+    );
+
+    await processTransaction(transaction);
+
+    console.log("");
+    console.log(`Created vesting type named '${vestingName}':`);
+    console.log((await tokenVesting.getVestingTypeStatistic()).toString());
+    console.log("");
+  }
+}
+
 export async function fillVestingTypesFromJson(fileName: PathLike) {
-  // TODO: change this shit
   const content = readFileSync(fileName, "utf-8");
   const types = JSON.parse(content);
 
@@ -272,14 +319,12 @@ export async function fillVestingTypesFromJson(fileName: PathLike) {
 
   for (const vesting_type of validated_types!) {
     let schedule = await parseVestingSchedule(vesting_type)
-    if (schedule === undefined) 
+    if (schedule === undefined)
       throw Error('Failed to build schedule');
 
 
     vestingTypes.push([vesting_type.name, schedule]);
   }
-
-  // throw Error("42");
 
   for (const [vestingName, vestingType] of vestingTypes) {
     let { tokenVesting, processTransaction } = await helpers.bootstrapTools(

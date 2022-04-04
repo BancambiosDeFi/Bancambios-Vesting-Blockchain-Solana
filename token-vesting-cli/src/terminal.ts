@@ -12,6 +12,7 @@ import {
   getVestingStatisticCommand,
   getVestingTypeStatisticCommand,
   fillVestingTypesFromJson,
+  fillVestingTypesWithWalletsFromJson,
   fillVestingsFromCsv,
   parseVestingSchedule,
 } from "./commands";
@@ -148,15 +149,26 @@ function main(args: string[]) {
   program
     .command("fill-vesting-types")
     .alias("fvt")
-    .description("Fill vesting types from csv file")
+    .description("Fill vesting types from json file")
     .requiredOption(
       "-f, --filePath <path>",
-      "Path to a csv file with vesting types data"
+      "Path to a json file with vesting types data"
     )
     .action(async (options: any) => {
       await fillVestingTypesFromJson(options.filePath);
     });
 
+  program
+    .command("fill-vesting-types-with-pools")
+    .alias("fvtp")
+    .description("Fill vesting types from json file with provided source wallets")
+    .requiredOption(
+      "-f, --filePath <path>",
+      "Path to a json file with vesting types data"
+    )
+    .action(async (options: any) => {
+      await fillVestingTypesWithWalletsFromJson(options.filePath);
+    });
 
   program
     .command("fill-vestings")
