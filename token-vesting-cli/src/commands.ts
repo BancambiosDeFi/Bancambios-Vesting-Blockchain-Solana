@@ -139,7 +139,7 @@ export function test() {
 export async function parseVestingSchedule(schedule: object): Promise<VestingSchedule | undefined> {
   // PnYnMnDTnHnMnS
   // NOTE: fractional values of `n` are not supported
-  const IS08601_DURATION_REGEX = /P(?=\d+[YMWD])(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d+[HMS])(\d+H)?(\d+M)?(\d+S)?)?/;
+  const IS08601_DURATION_REGEX = /P((?=\d+[YMWD])(\d+Y)?(\d+M)?(\d+W)?(\d+D)?)?(T(?=\d+[HMS])(\d+H)?(\d+M)?(\d+S)?)?/;
 
   let schema = yup.object().shape({
       name: yup.string().required(),
