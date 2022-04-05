@@ -50,13 +50,13 @@ export class VestingTypeStatistic {
     result += `Token pool: ${this.token_pool.toString()}\n`;
     result += `Tokens in pool: ${this.tokensInTokenPool.toString()}\n`;
     result += 'Vesting schedule:\n';
-    result += `    Total tokens: ${this.vesting_schedule.token_count?.toNumber()}\n`;
+    result += `    Total tokens: ${this.vesting_schedule.token_count?.toString()}\n`;
     result += `    Total vestings: ${this.vesting_schedule.vesting_count}\n`;
     for(let i = 0; i < this.vesting_schedule.vesting_count!; i+=1) {
       result += `        Vesting ${i}:\n`
       result += `            Tokens: ${this.vesting_schedule.vestings![i][0]}\n`;
-      result += `            Start time: ${this.vesting_schedule.vestings![i][1].start_time.toNumber()}\n`;
-      result += `            Unlock period: ${this.vesting_schedule.vestings![i][1].unlock_period.toNumber()}\n`;
+      result += `            Start time: ${this.vesting_schedule.vestings![i][1].start_time.toString()}\n`;
+      result += `            Unlock period: ${this.vesting_schedule.vestings![i][1].unlock_period.toString()}\n`;
       result += `            Unlock count: ${this.vesting_schedule.vestings![i][1].unlock_count}\n`;
     }
     return result;

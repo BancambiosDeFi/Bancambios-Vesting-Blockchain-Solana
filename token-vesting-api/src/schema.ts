@@ -1,6 +1,6 @@
 import { field, generateSchemas, variant } from "@solvei/borsh/schema";
 import BN from "bn.js";
-import {VestingsCreator, LinearVesting} from "./models"
+import {VestingsCreator, TokenCountCreator, LinearVesting} from "./models"
 
 class Super {}
 
@@ -61,7 +61,7 @@ export class WithdrawExcessiveFromPoolInstruction extends Super {
 
 @variant(4)
 export class ChangeVestingTypeScheduleInstruction extends Super {
-  @field({ type: "u64" })
+  @field(TokenCountCreator)
   public token_count: number;
 
   @field({ type: "u8" })
