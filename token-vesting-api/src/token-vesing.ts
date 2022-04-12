@@ -163,7 +163,7 @@ export class TokenVesting implements ITokenVesting {
       tokenPoolPubkey,
       this.creator,
       [],
-      new u64(createVestingTypeInstruction.token_count)
+      createVestingTypeInstruction.token_count
     );
 
     const lamportsForVestingType =
@@ -526,10 +526,10 @@ export class TokenVesting implements ITokenVesting {
     const vesting = await this.getVesting(vestingType.token_pool, receiver);
 
     if (
-      !vesting.total_tokens ||
-      !vesting.withdrawn_tokens ||
-      !vesting.token_account ||
-      !vesting.vesting_type_account
+      vesting.total_tokens === undefined ||
+      vesting.withdrawn_tokens === undefined ||
+      vesting.token_account === undefined ||
+      vesting.vesting_type_account === undefined
     )
       throw Error("Deserialization error");
 
